@@ -1,5 +1,5 @@
 # .travis.yml
-sudo: false
+sudo: true
 language: ruby
 cache: bundler
 rvm:
