@@ -1,4 +1,4 @@
----
+<!-- ---
 layout: post
 title:  "Welcome to Jekyll!"
 date:   2015-04-20 08:43:59
@@ -102,4 +102,4 @@ Check out the [Jekyll docs][jekyll] for more info on how to get the most out of 
 window.tooltips = window.tooltips || []
 window.tooltips.push(['#someId', { content: "This is the text of the tooltip!" }])
 window.tooltips.push(['#someOtherId', { content: "{% include tooltips/example.html %}", placement: "right" }])
-</script>
+</script> -->
