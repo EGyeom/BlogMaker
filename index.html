@@ -5,6 +5,7 @@ pagination:
 ---
 <div class="home">
 
+
 <div class="site-header-container {% if site.cover %}has-cover{% endif %}" {% if site.cover %}style="background-image: url({{ site.cover | prepend: site.baseurl }});"{% endif %}>
   <div class="scrim {% if site.cover %}has-cover{% endif %}">
     <header class="site-header">
@@ -13,6 +14,67 @@ pagination:
     </header>
   </div>
 </div>
+<!-- 블로그 옆에 카테고리 만드는 중 !
+{% assign sum = site.posts | size %}
+<div style="float:left; width:20%; margin-left: 5%;">
+<nav class="nav__list">
+  <label for="ac-toc">{{ site.data.ui-text[site.locale].menu_label }}</label>
+  <ul class="nav__items" id="category_tag_menu">
+      <li>
+            📂 <span style="font-family:'Cafe24Oneprettynight';">전체 글 수</style> <span style="font-family:'Coming Soon';">{{sum}}</style> <span style="font-family:'Cafe24Oneprettynight';">개</style> 
+      </li>
+      <li>
+        <span class="nav__sub-title">Development</span>
+            <ul>
+                {% for category in site.categories %}
+                    {% if category[0] == "Development" %}
+                      {% for tag in category %}
+                        <li><a href="/categories/cpp" class="">{{tag.title}} ({{category[1].size}})</a></li>
+                      {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            <ul>
+                {% for category in site.categories %}
+                    {% if category[0] == "STL" %}
+                        <li><a href="/categories/stl" class="">C++ STL & 표준 ({{category[1].size}})</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        <span class="nav__sub-title">Workout</span>
+            <ul>
+                {% for category in site.categories %}
+                    {% if category[0] == "Workout" %}
+                        <li><a href="/categories/algorithm" class="">알고리즘 구현 (with C++) ({{category[1].size}})</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            <ul>
+                {% for category in site.categories %}
+                    {% if category[0] == "Programmers" %}
+                        <li><a href="/categories/programmers" class="">프로그래머스 ({{category[1].size}})</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        <span class="nav__sub-title">Blog</span>
+            <ul>
+                {% for category in site.categories %}
+                    {% if category[0] == "Blog" %}
+                        <li><a href="/categories/algorithm" class="">알고리즘 구현 (with C++) ({{category[1].size}})</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            <ul>
+                {% for category in site.categories %}
+                    {% if category[0] == "Programmers" %}
+                        <li><a href="/categories/programmers" class="">프로그래머스 ({{category[1].size}})</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+      </li>
+  </ul>
+</nav>
+</div> -->
 
 <div class="wrapper">
 <ul class="post-list">
@@ -26,7 +88,7 @@ pagination:
     </section>
     <section class="post-meta">
       <div class="post-date">{{ post.date | date: "%B %-d, %Y" }}</div>
-      <div class="post-categories">
+      <div class="post-categories; float:right" >
       {% if post.categories.size > 0 %}in {% for cat in post.categories %}
         {% if site.jekyll-archives %}
         <a href="{{ site.baseurl }}/category/{{ cat }}">{{ cat | capitalize }}</a>{% if forloop.last == false %}, {% endif %}
@@ -42,7 +104,6 @@ pagination:
   {% endif %}
   {% endfor %}
 </ul>
-
 <nav class="pagination" role="navigation">
 	<p>
     {% if paginator.previous_page %}
@@ -83,6 +144,5 @@ pagination:
 		{% endif %}
 	</p>
 </nav>
-
 </div>
 </div>

@@ -1,4 +1,4 @@
----
+<!-- ---
 layout: post
 title:  "python 자료형 (Data Type) 알아보기 01 - 숫자 자료형"
 date:   2021-10-22 10:43:59
@@ -54,4 +54,4 @@ print(type(integer))
 의 결과는 ~  
 
     <class 'int'>
-    
+     -->
