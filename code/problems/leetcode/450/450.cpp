@@ -30,11 +30,11 @@ public:
         printNode(root);
         if(root->val < key)
         {
-            root = deleteNode(root->right,key); 
+            root->right = deleteNode(root->right,key); 
         }      
         else if(root->val > key)
         {
-            root = deleteNode(root->left,key);
+            root->left = deleteNode(root->left,key);
         }
         else
         {
@@ -53,7 +53,7 @@ public:
                 find_min = find_min->left;
             }
             root->val = find_min->val;
-            find_min = nullptr;
+            root->right = deleteNode(root->right,key);
             return root;
         }
     }
@@ -82,6 +82,7 @@ int main()
 {
     Solution s;
     TreeNode * root = new TreeNode(5,new TreeNode(3,new TreeNode(2), new TreeNode(4)),new TreeNode(6,nullptr,new TreeNode(7)));
-    s.printNode(root);
     TreeNode * ans = s.deleteNode(root,3);
+    s.printNode(ans);
+
 }
