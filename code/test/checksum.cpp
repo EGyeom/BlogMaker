@@ -6,10 +6,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/mman.h>
+
 
 #define _WIRELESS_DEVICE_INFO_H_
 
-#define WLD_DEVICE_LIST_MAX  (10 + 1)
+#define WLD_DEVICE_LIST_MAX  (10)
 #define WLD_DEVICE_ID_LEN    (18)
 #define WLD_DEVICE_NAME_LEN  (32*3+2) //BMS_MAX_DEV_NAME_LEN  ((32 * 3) + 2)//32 unicode char + terminator //ischo 20181019,utf-8 3byte
 #define WLD_BT_ADDRESS_LEN   (18)
@@ -20,6 +22,22 @@
 //current WLDeviceInfo Version
 #define WLD_INFO_VERSION_MAJOR 1
 #define WLD_INFO_VERSION_MINOR 0
+
+
+typedef char AAPhoneSerial[100];
+typedef char AAPhoneMac[54];
+typedef unsigned char HUBTMac[6];
+typedef struct{
+    int32_t totalCount;
+    int32_t currentPosition;
+    int32_t mStatus;
+    AAPhoneSerial knownPhoneList[100];
+    uint16_t vendorId; //DealerMode
+    AAPhoneMac phoneMac;
+    HUBTMac huBTMac;
+    //std::string phoneMac;
+} AAPhoneListData;
+
 
 typedef enum
 {
@@ -79,10 +97,10 @@ typedef struct
 
  WLDeviceList mWPDevList;
  WLDeviceList testList;
-void saveDevInfoFile()
+void saveDevInfoFile(const char * path)
 {
     int32_t fd;
-    fd = open(WIRELESS_DEV_LIST_FILE,O_RDWR|O_CREAT, S_IRGRP|S_IWUSR);
+    fd = open(path,O_RDWR|O_CREAT);
     if(fd < 0 ){
         printf("file open error\n");
         return;
@@ -113,8 +131,7 @@ void saveDevInfoFile()
     uint8_t minor = WLD_INFO_VERSION_MINOR;
     write(fd, &major, sizeof(uint8_t));
     write(fd, &minor, sizeof(uint8_t));
-    int tempCheckSum = 0;
-    printf("%d\n", sizeof(WLDeviceInfo));
+    u_int8_t tempCheckSum = 0xFF;
     for(size_t i=0; i < WLD_DEVICE_LIST_MAX; i++){
         printf("\n");
         const char * ptr = (char*)&mWPDevList.WLDevices[i];
@@ -129,33 +146,40 @@ void saveDevInfoFile()
         for(int j =0; j < sizeof(mWPDevList.WLDevices[i]); j++)
         {
             // printf("%d ", *(ptr+j));
-            tempCheckSum += (int)*(ptr+j);
+            tempCheckSum += (uint8_t)*(ptr+j);
         }
-        if(i == WLD_DEVICE_LIST_MAX -1)
-        {
-            mWPDevList.WLDevices[WLD_DEVICE_LIST_MAX -1].WLDInfo.WLDType = (WLDeviceType)tempCheckSum;
-        }
+        // if(i == WLD_DEVICE_LIST_MAX -1)
+        // {
+        //     mWPDevList.WLDevices[WLD_DEVICE_LIST_MAX -1].WLDInfo.WLDType = (WLDeviceType)tempCheckSum;
+        // }
         write(fd, &(mWPDevList.WLDevices[i].WLDInfo), sizeof(WLDeviceInfo));
         printf("\n");
     }
-
+    // printf("%x\n",qwerty);
+    printf("%x\n",tempCheckSum);
+    // tempCheckSum &= 0xFF;
+    printf("%x\n",tempCheckSum);
+    u_int8_t temp = ~tempCheckSum;
+    printf("%x\n", temp);
+    printf("%x\n", (temp+tempCheckSum));
+    write(fd, &tempCheckSum, sizeof(int));
     // ptr = "hello1";
     // for(int i =0; i < sizeof("hello1"); i++)
     // {
     //     printf("%d ", *(ptr+i));
     // }
     
-    printf("tempCheckSum : %d\n", mWPDevList.WLDevices[WLD_DEVICE_LIST_MAX -1].WLDInfo.WLDType);
+    // printf("tempCheckSum : %d\n", mWPDevList.WLDevices[WLD_DEVICE_LIST_MAX -1].WLDInfo.WLDType);
     close(fd);
     system("sync");
 }
 
-void loadDevicesFromFile()
+void loadDevicesFromFile(const char * path)
 {
     int mWLDInfoListMaxSize = sizeof(WLDeviceInfo) * WLD_DEVICE_LIST_MAX;
     if(access(WIRELESS_DEV_LIST_FILE,0) != 0) //check file exist or not
     {
-        saveDevInfoFile();//for create file
+        saveDevInfoFile(path);//for create file
         return;
     }
 
@@ -164,7 +188,7 @@ void loadDevicesFromFile()
     stat(WIRELESS_DEV_LIST_FILE, &st);
     size_t filesize = st.st_size;
     
-    int32_t fd = open(WIRELESS_DEV_LIST_FILE,O_RDONLY);
+    int32_t fd = open(path,O_RDONLY);
     if(fd <0){
         return;
     }
@@ -188,10 +212,12 @@ void loadDevicesFromFile()
             tempCheckSum += (int)*(ptr+j);
         }
     }
-    printf("checksum = %d \t\t readvalue = %d \n", tempCheckSum, buff[WLD_DEVICE_LIST_MAX -1].WLDType);
+    int savedCheckSum = 0;
+    read(fd,&savedCheckSum, sizeof(int));
+    printf("checksum = %d \t\t readvalue = %d \n", tempCheckSum,savedCheckSum);
     close(fd);
 
-    if(buff[WLD_DEVICE_LIST_MAX -1].WLDType == tempCheckSum)
+    if(savedCheckSum == tempCheckSum)
     {
         for(size_t i=0; i < WLD_DEVICE_LIST_MAX-1; i++)
         {
@@ -213,12 +239,95 @@ void loadDevicesFromFile()
 
 }
 
+bool mmMapOpen()
+{
+    int  mMMapSize = sizeof(AAPhoneListData)+1;
+    void* shBuffer = NULL;
+    int retval = 0;
+    int fd = -1; //S_IRUSR|S_IWUSR
+    bool fileCreated = false;
+    fd = open("/backup/save/BlogMaker/code/test/aaPhoneList.txt", O_RDWR); //S_IRUSR|S_IWUSR
+    printf("fd1 : %d\n", fd);
+    if (fd < 0){ //ENOENT not exist
+        fd = open("/backup/save/BlogMaker/code/test/aaPhoneList.txt", O_RDWR|O_CREAT);
+        printf("fd2 : %d\n", fd);
+        if (fd < 0 ){ //create
+            printf("AndroidAuto phone list file creation error!!!");
+            return false;
+        }
+        fileCreated = true;
+    }
+    struct stat finfo = {};//CodeSonar
+
+    memset(&finfo, 0, sizeof(struct stat));
+    retval = fstat(fd, &finfo);
+    ftruncate(fd, mMMapSize);
+    shBuffer =/*  (AAPhoneListData*) */mmap(nullptr, mMMapSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+    if(shBuffer != NULL)
+    {
+        *((char*)shBuffer+mMMapSize-1) = 0x11;
+        ((AAPhoneListData*)shBuffer)->totalCount = 10;
+        ((AAPhoneListData*)shBuffer)->currentPosition = 5;
+        ((AAPhoneListData*)shBuffer)->mStatus =12;
+        ((AAPhoneListData*)shBuffer)->vendorId = 15; //DealerMod
+        memcpy(((AAPhoneListData*)shBuffer)->huBTMac, "hell0o\0", 6);
+        memcpy(((AAPhoneListData*)shBuffer)->knownPhoneList, "hell0o\0", 6);
+        memcpy(((AAPhoneListData*)shBuffer)->knownPhoneList+1, "hell1o\0", 6);
+        strncpy(((AAPhoneListData*)shBuffer)->phoneMac,"-", 2);
+    }
+    // memcpy(shBuffer->huBTMac, "hell0o\0", 6);
+    // if (fileCreated == true){
+    //     shBuffer->totalCount = 0;
+    //     shBuffer->currentPosition = 0;
+    //     shBuffer->vendorId = 0;
+    //     strncpy(shBuffer->phoneMac,"-", 2);
+    // }
+    msync(shBuffer, mMMapSize, MS_SYNC);
+
+    close(fd);
+    munmap(shBuffer, mMMapSize);
+    shBuffer = NULL;
+
+    fd = open("aaPhoneList.txt", O_RDWR|O_CREAT);
+
+    if (fd < 0){ //ENOENT not exist
+        fd = open("aaPhoneList.txt", O_RDWR|O_CREAT);
+        if (fd < 0 ){ //create
+            printf("2AndroidAuto phone list file creation error!!!");
+            return false;
+        }
+    }
+    finfo = {};//CodeSonar
+
+    memset(&finfo, 0, sizeof(struct stat));
+    retval = fstat(fd, &finfo);
+    ftruncate(fd, mMMapSize);
+    shBuffer = mmap(nullptr, mMMapSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+    printf("totalCount : %d \n", ((AAPhoneListData*)shBuffer)->totalCount);
+    printf("currentPosition : %d \n", ((AAPhoneListData*)shBuffer)->currentPosition);
+    printf("mStatus : %d \n", ((AAPhoneListData*)shBuffer)->mStatus);
+    printf("vendorId : %d \n", ((AAPhoneListData*)shBuffer)->vendorId);
+    printf("huBTMac : %s \n", ((AAPhoneListData*)shBuffer)->huBTMac);
+    printf("knownPhoneList : %s \n", ((AAPhoneListData*)shBuffer)->knownPhoneList);
+    printf("knownPhoneList : %s \n", ((AAPhoneListData*)shBuffer)->knownPhoneList+1);
+    printf("phoneMac : %s \n", ((AAPhoneListData*)shBuffer)->phoneMac);
+    printf("checkSum : %x \n", *((char*)shBuffer + mMMapSize-1));
+    return 0;
+}
 
 int main()
 {
     printf("---------------WRITE-----------------\n");
-    saveDevInfoFile();
-
+    // saveDevInfoFile(WIRELESS_DEV_LIST_FILE);
+    printf("%d\n", mmMapOpen());
     printf("---------------READ-----------------\n");
-    loadDevicesFromFile();
+    // loadDevicesFromFile();
 }
+//     struct Data {
+//         int num;
+//         char name[100];
+//     };
+
+//     Data _data[2];
+//     _data[1] = 10;
+// }
