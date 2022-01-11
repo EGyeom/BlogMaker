@@ -4,10 +4,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <string>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/mman.h>
-
+#include <regex>
 
 #define _WIRELESS_DEVICE_INFO_H_
 
@@ -322,6 +323,22 @@ int main()
     printf("%d\n", mmMapOpen());
     printf("---------------READ-----------------\n");
     // loadDevicesFromFile();
+    std::vector<std::string> file_names = {"aaPhoneList.mm","wireless_dev_list.dat","aaPhoneList"};
+    
+    for(auto file_name : file_names)
+    {
+        int typeIndex = file_name.find_last_of('.');
+        std::cout << typeIndex <<"\n";
+        if(typeIndex == -1) continue;
+        if(file_name.substr(typeIndex+1) == "mm")
+        {
+            std::cout <<"mm file" << "\n";
+        }
+        else if(file_name.substr(typeIndex+1) == "dat")
+        {
+            std::cout <<"dat file" << "\n";
+        }
+    }
 }
 //     struct Data {
 //         int num;
