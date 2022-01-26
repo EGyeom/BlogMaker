@@ -1,0 +1,8 @@
+./TokenToInt
+./encryToken
+
+File=save.txt
+if [ -f "$File" ]; then  
+  echo "$File exist "
+  rm $File
+fi
