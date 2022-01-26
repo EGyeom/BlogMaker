@@ -23,7 +23,7 @@
 //current WLDeviceInfo Version
 #define WLD_INFO_VERSION_MAJOR 1
 #define WLD_INFO_VERSION_MINOR 0
-
+    
 
 typedef char AAPhoneSerial[100];
 typedef char AAPhoneMac[54];
@@ -184,7 +184,7 @@ void loadDevicesFromFile(const char * path)
         return;
     }
 
-    size_t oldsize = sizeof(V_0_0_WLDeviceInfo)*WLD_DEVICE_LIST_MAX;
+    size_t oldsize = sizeof(WLDeviceInfo)*WLD_DEVICE_LIST_MAX;
     struct stat st = {};
     stat(WIRELESS_DEV_LIST_FILE, &st);
     size_t filesize = st.st_size;
@@ -240,105 +240,111 @@ void loadDevicesFromFile(const char * path)
 
 }
 
-bool mmMapOpen()
+bool updateCheckSum(void * file, int fileSize)
 {
-    int  mMMapSize = sizeof(AAPhoneListData)+1;
+    /*
+     int  mMMapSize = fileSize+1;
+    printf("size : %d\n", mMMapSize);   
     void* shBuffer = NULL;
     int retval = 0;
     int fd = -1; //S_IRUSR|S_IWUSR
-    bool fileCreated = false;
-    fd = open("/backup/save/BlogMaker/code/test/aaPhoneList.txt", O_RDWR); //S_IRUSR|S_IWUSR
-    printf("fd1 : %d\n", fd);
-    if (fd < 0){ //ENOENT not exist
-        fd = open("/backup/save/BlogMaker/code/test/aaPhoneList.txt", O_RDWR|O_CREAT);
-        printf("fd2 : %d\n", fd);
-        if (fd < 0 ){ //create
-            printf("AndroidAuto phone list file creation error!!!");
-            return false;
-        }
-        fileCreated = true;
-    }
-    struct stat finfo = {};//CodeSonar
 
-    memset(&finfo, 0, sizeof(struct stat));
-    retval = fstat(fd, &finfo);
-    ftruncate(fd, mMMapSize);
-    shBuffer =/*  (AAPhoneListData*) */mmap(nullptr, mMMapSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-    if(shBuffer != NULL)
+    if(strstr(path,".dat") != nullptr)
     {
-        *((char*)shBuffer+mMMapSize-1) = 0x11;
-        ((AAPhoneListData*)shBuffer)->totalCount = 10;
-        ((AAPhoneListData*)shBuffer)->currentPosition = 5;
-        ((AAPhoneListData*)shBuffer)->mStatus =12;
-        ((AAPhoneListData*)shBuffer)->vendorId = 15; //DealerMod
-        memcpy(((AAPhoneListData*)shBuffer)->huBTMac, "hell0o\0", 6);
-        memcpy(((AAPhoneListData*)shBuffer)->knownPhoneList, "hell0o\0", 6);
-        memcpy(((AAPhoneListData*)shBuffer)->knownPhoneList+1, "hell1o\0", 6);
-        strncpy(((AAPhoneListData*)shBuffer)->phoneMac,"-", 2);
-    }
-    // memcpy(shBuffer->huBTMac, "hell0o\0", 6);
-    // if (fileCreated == true){
-    //     shBuffer->totalCount = 0;
-    //     shBuffer->currentPosition = 0;
-    //     shBuffer->vendorId = 0;
-    //     strncpy(shBuffer->phoneMac,"-", 2);
-    // }
-    msync(shBuffer, mMMapSize, MS_SYNC);
-
-    close(fd);
-    munmap(shBuffer, mMMapSize);
-    shBuffer = NULL;
-
-    fd = open("aaPhoneList.txt", O_RDWR|O_CREAT);
-
-    if (fd < 0){ //ENOENT not exist
-        fd = open("aaPhoneList.txt", O_RDWR|O_CREAT);
-        if (fd < 0 ){ //create
-            printf("2AndroidAuto phone list file creation error!!!");
-            return false;
+        printf("is dat File\n");
+        bool fileCreated = false;
+        fd = open(path, O_RDWR); //S_IRUSR|S_IWUSR
+        printf("fd1 : %d\n", fd);
+        if (fd < 0){ //ENOENT not exist
+            fd = open(path, O_RDWR|O_CREAT);
+            printf("fd2 : %d\n", fd);
+            if (fd < 0 ){ //create
+                printf("AndroidAuto phone list file creation error!!!");
+                return false;
+            }
+            fileCreated = true;
         }
     }
-    finfo = {};//CodeSonar
+    else if(strstr(path, ".mm") != nullptr)
+    {
+        printf("is MM File\n");
+        bool fileCreated = false;
+        fd = open(path, O_RDWR); //S_IRUSR|S_IWUSR
+        printf("fd1 : %d\n", fd);
+        if (fd < 0){ //ENOENT not exist
+            fd = open(path, O_RDWR|O_CREAT);
+            printf("fd2 : %d\n", fd);
+            if (fd < 0 ){ //create
+                printf("AndroidAuto phone list file creation error!!!");
+                return false;
+            }
+            fileCreated = true;
+        }
+        struct stat finfo = {};//CodeSonar
 
-    memset(&finfo, 0, sizeof(struct stat));
-    retval = fstat(fd, &finfo);
-    ftruncate(fd, mMMapSize);
-    shBuffer = mmap(nullptr, mMMapSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-    printf("totalCount : %d \n", ((AAPhoneListData*)shBuffer)->totalCount);
-    printf("currentPosition : %d \n", ((AAPhoneListData*)shBuffer)->currentPosition);
-    printf("mStatus : %d \n", ((AAPhoneListData*)shBuffer)->mStatus);
-    printf("vendorId : %d \n", ((AAPhoneListData*)shBuffer)->vendorId);
-    printf("huBTMac : %s \n", ((AAPhoneListData*)shBuffer)->huBTMac);
-    printf("knownPhoneList : %s \n", ((AAPhoneListData*)shBuffer)->knownPhoneList);
-    printf("knownPhoneList : %s \n", ((AAPhoneListData*)shBuffer)->knownPhoneList+1);
-    printf("phoneMac : %s \n", ((AAPhoneListData*)shBuffer)->phoneMac);
-    printf("checkSum : %x \n", *((char*)shBuffer + mMMapSize-1));
-    return 0;
+        memset(&finfo, 0, sizeof(struct stat));
+        retval = fstat(fd, &finfo);
+        ftruncate(fd, mMMapSize);
+        shBuffer =  mmap(nullptr, mMMapSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+        if(shBuffer != NULL)
+        {
+            *((char*)shBuffer+mMMapSize-1) = 0x11;
+            ((AAPhoneListData*)shBuffer)->totalCount = 10;
+            ((AAPhoneListData*)shBuffer)->currentPosition = 5;
+            ((AAPhoneListData*)shBuffer)->mStatus =12;
+            ((AAPhoneListData*)shBuffer)->vendorId = 15; //DealerMod
+            memcpy(((AAPhoneListData*)shBuffer)->huBTMac, "hell0o\0", 6);
+            memcpy(((AAPhoneListData*)shBuffer)->knownPhoneList, "hell0o\0", 6);
+            memcpy(((AAPhoneListData*)shBuffer)->knownPhoneList+1, "hell1o\0", 6);
+            strncpy(((AAPhoneListData*)shBuffer)->phoneMac,"-", 2);
+        }
+
+        msync(shBuffer, mMMapSize, MS_SYNC);
+
+        close(fd);
+        munmap(shBuffer, mMMapSize);
+        shBuffer = NULL;
+
+        fd = open(path, O_RDWR|O_CREAT);
+
+        if (fd < 0){ //ENOENT not exist
+            fd = open(path, O_RDWR|O_CREAT);
+            if (fd < 0 ){ //create
+                printf("2AndroidAuto phone list file creation error!!!");
+                return false;
+            }
+        }
+        finfo = {};//CodeSonar
+
+        memset(&finfo, 0, sizeof(struct stat));
+        retval = fstat(fd, &finfo);
+        ftruncate(fd, mMMapSize);
+        shBuffer = mmap(nullptr, mMMapSize, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+        printf("totalCount : %d \n", ((AAPhoneListData*)shBuffer)->totalCount);
+        printf("currentPosition : %d \n", ((AAPhoneListData*)shBuffer)->currentPosition);
+        printf("mStatus : %d \n", ((AAPhoneListData*)shBuffer)->mStatus);
+        printf("vendorId : %d \n", ((AAPhoneListData*)shBuffer)->vendorId);
+        printf("huBTMac : %s \n", ((AAPhoneListData*)shBuffer)->huBTMac);
+        printf("knownPhoneList : %s \n", ((AAPhoneListData*)shBuffer)->knownPhoneList);
+        printf("knownPhoneList : %s \n", ((AAPhoneListData*)shBuffer)->knownPhoneList+1);
+        printf("phoneMac : %s \n", ((AAPhoneListData*)shBuffer)->phoneMac);
+        printf("checkSum : %x \n", *((char*)shBuffer + mMMapSize-1));
+        close(fd);
+    }
+
+    return 0; */
+
+
 }
 
 int main()
 {
     printf("---------------WRITE-----------------\n");
     // saveDevInfoFile(WIRELESS_DEV_LIST_FILE);
-    printf("%d\n", mmMapOpen());
+    mmMapOpen("wireless_dev_list.dat", sizeof(WLDeviceInfo));
+    mmMapOpen("aaPhoneList.mm", sizeof(AAPhoneListData));
     printf("---------------READ-----------------\n");
     // loadDevicesFromFile();
-    std::vector<std::string> file_names = {"aaPhoneList.mm","wireless_dev_list.dat","aaPhoneList"};
-    
-    for(auto file_name : file_names)
-    {
-        int typeIndex = file_name.find_last_of('.');
-        std::cout << typeIndex <<"\n";
-        if(typeIndex == -1) continue;
-        if(file_name.substr(typeIndex+1) == "mm")
-        {
-            std::cout <<"mm file" << "\n";
-        }
-        else if(file_name.substr(typeIndex+1) == "dat")
-        {
-            std::cout <<"dat file" << "\n";
-        }
-    }
 }
 //     struct Data {
 //         int num;

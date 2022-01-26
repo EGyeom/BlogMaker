@@ -7,7 +7,7 @@ int main()
     std::regex r("(^j|^h).*\\.(?:mm|dat)$");
 
     std::vector<std::string> file_names = {"jelloworld.dat", "helloworld.mm"};
-
+                
     std::regex re("^h.*");
 
     for(auto file_name : file_names)
